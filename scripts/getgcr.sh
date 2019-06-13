@@ -33,22 +33,28 @@ function check() {
 }
 
 function pull() {
-  echo -e "${ORANGE}Proxy: $proxy_url"
-  tput sgr0
-  docker pull $proxy_url$image
-  if [ "$?" == "0" ]; then
-    docker tag $proxy_url$image $image_url
-    docker images ${image_url}
-    echo -e "${ORANGE}Delete Proxy image."
+  for proxy_url in ${proxy[@]}; do
+    [ "${proxy_url:0-1}" != "/" ] && proxy_url=$proxy_url/
+    echo -e "${ORANGE}[Proxy:] $proxy_url"
+    echo -e "[Image:] $image_url"
     tput sgr0
-    docker rmi $proxy_url$image
-    echo -e "${GREEN}Pull image success."
-    tput sgr0
-    exit 0 
-  else
-    echo -e "${RED}Pull image failed."
-    tput sgr0
-  fi
+    docker pull $proxy_url$image
+    if [ "$?" == "0" ]; then
+      docker tag $proxy_url$image $image_url
+      docker images ${image_url}
+      echo -e "${ORANGE}[Delete:] Delete Proxy image."
+      tput sgr0
+      docker rmi $proxy_url$image
+      echo -e "${GREEN}[Result:] Pull image success."
+      tput sgr0
+      echo
+      break
+    else
+      echo -e "${RED}[Result:] Pull image failed."
+      tput sgr0
+      echo
+    fi
+  done 
 }
 
 function usage {
@@ -62,6 +68,7 @@ function usage {
     echo "  $0 gcr.io/google_containers/pause-amd64:3.0"
     echo "  $0 -i k8s.gcr.io/pause-amd64:3.0"
     echo "  $0 -p 127.0.0.1:5000 -i k8s.gcr.io/pause-amd64:3.0"
+    echo "  $0 \"k8s.gcr.io/kube-{apiserver,controller-manager,proxy,scheduler}:v1.14.3\""
     echo
     exit 1
 }
@@ -94,8 +101,18 @@ while [ "$1" != "" ]; do
     shift
 done
 
-for proxy_url in ${proxy[@]}; do
-   [ "${proxy_url:0-1}" != "/" ] && proxy_url=$proxy_url/
-   image=${image_url##*/}
-   pull
-done
+image=${image_url##*/}
+
+if echo "$image" | grep -q "{"; then
+  prefix_image=$(echo $image_url | cut -d '{' -f 1)
+  tag_image=$(echo $image_url | cut -d ':' -f 2)
+  muti_image=$(echo $image_url | cut -d '{' -f 2 | cut -d '}' -f 1)
+  for i in $(echo $muti_image | tr "," "\n")
+  do
+    image_url=$prefix_image$i:$tag_image
+    image=${image_url##*/}
+    pull
+  done
+else
+  pull
+fi
