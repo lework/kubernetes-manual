@@ -38,6 +38,7 @@ function pull() {
   docker pull $proxy_url$image
   if [ "$?" == "0" ]; then
     docker tag $proxy_url$image $image_url
+    docker images ${image_url}
     echo -e "${ORANGE}Delete Proxy image."
     tput sgr0
     docker rmi $proxy_url$image
@@ -92,7 +93,7 @@ while [ "$1" != "" ]; do
     esac
     shift
 done
-echo $proxy
+
 for proxy_url in ${proxy[@]}; do
    [ "${proxy_url:0-1}" != "/" ] && proxy_url=$proxy_url/
    image=${image_url##*/}
