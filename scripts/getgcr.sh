@@ -92,7 +92,7 @@ while [ "$1" != "" ]; do
     esac
     shift
 done
-echo $proxy
+
 for proxy_url in ${proxy[@]}; do
    [ "${proxy_url:0-1}" != "/" ] && proxy_url=$proxy_url/
    image=${image_url##*/}
