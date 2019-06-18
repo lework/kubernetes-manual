@@ -17,7 +17,18 @@ GREEN_PS3=$'\e[0;32m'
 ORANGE_PS3=$'\e[0;33m'
 WHITE='\033[0;37m'
 
-proxy=("gcr.azk8s.cn/google_containers" "gcrxio")
+proxy=(
+  "gcr.azk8s.cn/google_containers"
+  "registry.aliyuncs.com/google_containers"
+  "gcrxio"
+)
+images=(
+  "k8s.gcr.io/kube-apiserver:"
+  "k8s.gcr.io/kube-controller-manager:"
+  "k8s.gcr.io/kube-scheduler:"
+  "k8s.gcr.io/kube-proxy:"
+  "k8s.gcr.io/pause-amd64:3.1"
+)
 
 ######################################################################################################
 # function
@@ -33,7 +44,10 @@ function check() {
 }
 
 function pull() {
-  for proxy_url in ${proxy[@]}; do
+  local image_url=$1
+  local image=${image_url##*/}
+
+  for proxy_url in ${proxy[*]}; do
     [ "${proxy_url:0-1}" != "/" ] && proxy_url=$proxy_url/
     echo -e "${ORANGE}[Proxy:] $proxy_url"
     echo -e "[Image:] $image_url"
@@ -58,17 +72,23 @@ function pull() {
 }
 
 function usage {
+    echo "Download the Google docker image through the proxy node"
     echo
-    echo "Usage: $0 [[[-p proxy] [-i image]] | [-h]]"
-    echo "  -p,--proxy      proxy url, exp: gcr.azk8s.cn gcrxio"
-    echo "  -i,--image      images url, exp: k8s.gcr.io/pause-amd64:3.0"
+    echo "Usage: $0 [[[-p proxy] [-i image] | [-t tag] | [-f file]] | [-h]]"
+    echo "  -p,--proxy      Specify proxy node url"
+    echo "  -i,--image      Specify the image name"
+    echo "  -t,--tag        Specify the image tag and download the k8s family bucket."
+    echo "  -f,--file       Specify a file path containing the name"
+    echo "  -h,--help       View help"
     echo
     echo
     echo "Example:"
-    echo "  $0 gcr.io/google_containers/pause-amd64:3.0"
-    echo "  $0 -i k8s.gcr.io/pause-amd64:3.0"
-    echo "  $0 -p 127.0.0.1:5000 -i k8s.gcr.io/pause-amd64:3.0"
+    echo "  $0 gcr.io/google_containers/pause-amd64:3.1"
     echo "  $0 \"k8s.gcr.io/kube-{apiserver,controller-manager,proxy,scheduler}:v1.14.3\""
+    echo "  $0 -i k8s.gcr.io/pause-amd64:3.1"
+    echo "  $0 -p registry.aliyuncs.com/google_containers -i k8s.gcr.io/pause-amd64:3.1"
+    echo "  $0 -t v1.14.3"
+    echo "  $0 -f ./images.txt"
     echo
     exit 1
 }
@@ -79,6 +99,7 @@ function usage {
 ######################################################################################################
 
 check
+
 [ "$#" == "0" ] && usage
 
 while [ "$1" != "" ]; do
@@ -89,6 +110,12 @@ while [ "$1" != "" ]; do
                                 ;;
         -i | --image )          shift
 				image_url=$1
+                                ;;
+        -t | --tag )            shift
+				tag=$1
+                                ;;
+        -f | --file )           shift
+				file=$1
                                 ;;
         -h | --help )           usage
                                 exit
@@ -101,18 +128,31 @@ while [ "$1" != "" ]; do
     shift
 done
 
-image=${image_url##*/}
-
-if echo "$image" | grep -q "{"; then
+if echo "$image_url" | grep -q "{"; then
   prefix_image=$(echo $image_url | cut -d '{' -f 1)
   tag_image=$(echo $image_url | cut -d ':' -f 2)
   muti_image=$(echo $image_url | cut -d '{' -f 2 | cut -d '}' -f 1)
   for i in $(echo $muti_image | tr "," "\n")
   do
-    image_url=$prefix_image$i:$tag_image
-    image=${image_url##*/}
-    pull
+    pull $prefix_image$i:$tag_image
   done
-else
-  pull
+  exit 0
 fi
+
+if [ "$tag" != "" ]; then
+  for image in ${images[*]}
+  do
+    [ "${image:0-1}" == ":" ] && pull $image$tag || pull $image
+  done
+  exit 0
+fi
+
+if [ "$file" != "" ]; then
+  while IFS= read line
+  do
+    pull $line
+  done <"$file"
+  exit 0
+fi
+
+pull $image_url
