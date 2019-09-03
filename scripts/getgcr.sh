@@ -1,8 +1,14 @@
 #!/bin/env bash
-# 
-# lework
-# Download Google container image from proxy point.
 
+######################################################################################################
+#
+#Author         : lework
+#Description    : Download Google container image from proxy point.
+#Update Date    : 2019-09-03 10:00
+#
+######################################################################################################
+
+trap 'echo "trapped."; exit 1' 1 2 3 15
 
 ######################################################################################################
 # environment configuration
@@ -20,6 +26,8 @@ WHITE='\033[0;37m'
 proxy=(
   "gcr.azk8s.cn/google_containers"
   "registry.aliyuncs.com/google_containers"
+  "gcr.azk8s.cn"
+  "quay.azk8s.cn"
 )
 
 images=(
@@ -102,8 +110,8 @@ check
 
 [ "$#" == "0" ] && usage
 
-while [ "$1" != "" ]; do
-    case $1 in
+while [ "${1:-}" != "" ]; do
+    case ${1:-} in
         -p | --proxy )          shift
                                 unset proxy
                                 proxy=$1
@@ -128,7 +136,7 @@ while [ "$1" != "" ]; do
     shift
 done
 
-if echo "$image_url" | grep -q "{"; then
+if echo "${image_url:-}" | grep -q "{"; then
   prefix_image=$(echo $image_url | cut -d '{' -f 1)
   tag_image=$(echo $image_url | cut -d ':' -f 2)
   muti_image=$(echo $image_url | cut -d '{' -f 2 | cut -d '}' -f 1)
@@ -139,7 +147,7 @@ if echo "$image_url" | grep -q "{"; then
   exit 0
 fi
 
-if [ "$tag" != "" ]; then
+if [ "${tag:-}" != "" ]; then
   for image in ${images[*]}
   do
     [ "${image:0-1}" == ":" ] && pull $image$tag || pull $image
@@ -147,7 +155,7 @@ if [ "$tag" != "" ]; then
   exit 0
 fi
 
-if [ "$file" != "" ]; then
+if [ "${file:-}" != "" ]; then
   while IFS= read line
   do
     pull $line
