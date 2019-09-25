@@ -24,10 +24,11 @@ ORANGE_PS3=$'\e[0;33m'
 WHITE='\033[0;37m'
 
 proxy=(
-  "gcr.azk8s.cn/google_containers"
-  "registry.aliyuncs.com/google_containers"
   "gcr.azk8s.cn"
   "quay.azk8s.cn"
+  "registry.aliyuncs.com"
+  "gcr.azk8s.cn/google_containers"
+  "registry.aliyuncs.com/google_containers"
 )
 
 images=(
@@ -53,7 +54,7 @@ function check() {
 
 function pull() {
   local image_url=$1
-  local image=${image_url##*/}
+  local image=${image_url#*/}
 
   for proxy_url in ${proxy[*]}; do
     [ "${proxy_url:0-1}" != "/" ] && proxy_url=$proxy_url/
@@ -92,10 +93,10 @@ function usage {
     echo
     echo "Example:"
     echo "  $0 gcr.io/google_containers/pause-amd64:3.1"
-    echo "  $0 \"k8s.gcr.io/kube-{apiserver,controller-manager,proxy,scheduler}:v1.14.3\""
+    echo "  $0 \"k8s.gcr.io/kube-{apiserver,controller-manager,proxy,scheduler}:v1.16.0\""
     echo "  $0 -i k8s.gcr.io/pause-amd64:3.1"
     echo "  $0 -p registry.aliyuncs.com/google_containers -i k8s.gcr.io/pause-amd64:3.1"
-    echo "  $0 -t v1.14.3"
+    echo "  $0 -t v1.16.0"
     echo "  $0 -f ./images.txt"
     echo
     exit 1
