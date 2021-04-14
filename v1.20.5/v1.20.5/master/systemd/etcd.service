@@ -1,0 +1,17 @@
+[Unit]
+Description=Etcd Service
+Documentation=https://coreos.com/etcd/docs/latest/
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=notify
+User=etcd
+ExecStart=/usr/local/sbin/etcd --config-file=/etc/etcd/etcd.config.yaml
+Restart=on-failure
+RestartSec=10
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
+Alias=etcd3.service

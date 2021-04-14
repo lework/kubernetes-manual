@@ -1,0 +1,44 @@
+[Unit]
+Description=Kubernetes Controller Manager
+Documentation=https://github.com/kubernetes/kubernetes
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+ExecStart=/usr/local/sbin/kube-controller-manager \
+  --allocate-node-cidrs=true \
+  --kubeconfig=/etc/kubernetes/controller-manager.kubeconfig \
+  --authentication-kubeconfig=/etc/kubernetes/controller-manager.kubeconfig \
+  --authorization-kubeconfig=/etc/kubernetes/controller-manager.kubeconfig \
+  --client-ca-file=/etc/kubernetes/pki/ca.pem \
+  --cluster-signing-cert-file=/etc/kubernetes/pki/ca.pem \
+  --cluster-signing-key-file=/etc/kubernetes/pki/ca-key.pem \
+  --bind-address=0.0.0.0 \
+  --leader-elect=true \
+  --cluster-cidr=10.244.0.0/16 \
+  --cluster-name=kubernetes \
+  --node-cidr-mask-size=24 \
+  --node-monitor-grace-period=10s \
+  --pod-eviction-timeout=2m \
+  --service-cluster-ip-range=10.96.0.0/16 \
+  --terminated-pod-gc-threshold=30 \
+  --use-service-account-credentials=true \
+  --requestheader-client-ca-file=/etc/kubernetes/pki/front-proxy-ca.pem \
+  --service-account-private-key-file=/etc/kubernetes/pki/sa.key \
+  --root-ca-file=/etc/kubernetes/pki/ca.pem \
+  --use-service-account-credentials=true \
+  --controllers=*,bootstrapsigner,tokencleaner \
+  --deployment-controller-sync-period=10s \
+  --horizontal-pod-autoscaler-sync-period=10s \
+  --horizontal-pod-autoscaler-use-rest-clients=true \
+  --experimental-cluster-signing-duration=86700h \
+  --feature-gates=RotateKubeletClientCertificate=true \
+  --logtostderr=false \
+  --log-dir=/var/log/kubernetes/controller-manager \
+  --v=2
+
+Restart=always
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target

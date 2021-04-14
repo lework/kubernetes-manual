@@ -1,0 +1,56 @@
+[Unit]
+Description=Kubernetes API Server
+Documentation=https:/github.com/kubernetes/kubernetes
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+ExecStart=/usr/local/sbin/kube-apiserver \
+  --authorization-mode=Node,RBAC \
+  --enable-admission-plugins=NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeClaimResize,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota,Priority \
+  --advertise-address={{NODE_IP}} \
+  --bind-address=0.0.0.0  \
+  --secure-port=6443 \
+  --allow-privileged=true \
+  --enable-bootstrap-token-auth=true \
+  --apiserver-count={{APISERVER_COUNT}} \
+  --storage-backend=etcd3 \
+  --etcd-cafile=/etc/etcd/ssl/etcd-ca.pem \
+  --etcd-certfile=/etc/etcd/ssl/etcd.pem \
+  --etcd-keyfile=/etc/etcd/ssl/etcd-key.pem \
+  --etcd-servers={{ETCD_SERVERS}} \
+  --event-ttl=720h \
+  --client-ca-file=/etc/kubernetes/pki/ca.pem \
+  --kubelet-client-certificate=/etc/kubernetes/pki/apiserver.pem \
+  --kubelet-client-key=/etc/kubernetes/pki/apiserver-key.pem \
+  --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname \
+  --service-cluster-ip-range=10.96.0.0/16 \
+  --service-node-port-range=30000-50000 \
+  --service-account-issuer=https://kubernetes.default.svc.cluster.local \
+  --service-account-key-file=/etc/kubernetes/pki/sa.pub \
+  --service-account-signing-key-file=/etc/kubernetes/pki/sa.key \
+  --tls-cert-file=/etc/kubernetes/pki/apiserver.pem \
+  --tls-private-key-file=/etc/kubernetes/pki/apiserver-key.pem \
+  --requestheader-client-ca-file=/etc/kubernetes/pki/front-proxy-ca.pem \
+  --requestheader-username-headers=X-Remote-User \
+  --requestheader-group-headers=X-Remote-Group \
+  --requestheader-allowed-names=front-proxy-client \
+  --requestheader-extra-headers-prefix=X-Remote-Extra- \
+  --proxy-client-cert-file=/etc/kubernetes/pki/front-proxy-client.pem \
+  --proxy-client-key-file=/etc/kubernetes/pki/front-proxy-client-key.pem \
+  --audit-log-maxage=30 \
+  --audit-log-maxbackup=5 \
+  --audit-log-maxsize=128 \
+  --audit-log-path=/var/log/kubernetes/apiserver/audit.log \
+  --audit-policy-file=/etc/kubernetes/audit-policy.yaml \
+  --encryption-provider-config=/etc/kubernetes/encryption.yaml \
+  --log-dir=/var/log/kubernetes/apiserver \
+  --logtostderr=false \
+  --v=2
+
+Restart=on-failure
+RestartSec=10s
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target
